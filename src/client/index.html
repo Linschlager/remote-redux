@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Client</title>
+  </head>
+  <body>
+    <div>
+      Hello, World!
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.dev.js"></script>
+    <script>
+      function HtmlEncode(s) {
+        var el = document.createElement("div");
+        el.innerText = el.textContent = s;
+        s = el.innerHTML;
+        return s;
+      }
+      const connection = io("https://bt2xw.sse.codesandbox.io");
+      let currentState = document.createElement("ul");
+
+      connection.on("connect", () => {
+        console.log("connected to sandbox socket!");
+        connection.emit("update");
+      });
+
+      connection.on("update", store => {
+        console.log("store", store);
+        currentState.innerHTML = "";
+        store.todos.ids.forEach(id => {
+          const entry = store.todos.byId[id];
+          const li = document.createElement("li");
+          const deleteButton = document.createElement("button");
+          deleteButton.innerHTML = "&cross;";
+          deleteButton.onclick = () => {
+            connection.emit("action", {
+              type: "DELETE_TODO",
+              payload: id
+            });
+          };
+          const text = document.createElement("span");
+          text.innerText = entry.title;
+          li.appendChild(deleteButton);
+          li.appendChild(text);
+          currentState.appendChild(li);
+        });
+      });
+
+      const updateButton = document.createElement("button");
+      updateButton.innerText = "emit update";
+      updateButton.onclick = () => {
+        connection.emit("update");
+      };
+      document.body.appendChild(updateButton);
+
+      const input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = "Your todo";
+
+      const actionButton = document.createElement("button");
+      actionButton.innerText = "emit action";
+      actionButton.onclick = () => {
+        if (input.value.length > 0) {
+          connection.emit("action", {
+            type: "ADD_TODO",
+            payload: {
+              id: Math.random().toString(16),
+              title: input.value
+            }
+          });
+          input.value = "";
+        }
+      };
+      document.body.appendChild(actionButton);
+      document.body.appendChild(input);
+      document.body.appendChild(currentState);
+    </script>
+
+    <script>
+      const clockItems = "🕐,🕑,🕒,🕓,🕔,🕕,🕖,🕗,🕘,🕙,🕚,🕛".split(",");
+      let counter = 0;
+      const clock = document.createElement("span");
+      setInterval(() => {
+        clock.innerText = clockItems[counter];
+        counter = (counter + 1) % clockItems.length;
+      }, 500);
+      document.body.appendChild(clock);
+    </script>
+  </body>
+</html>
